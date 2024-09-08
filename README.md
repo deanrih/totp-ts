@@ -33,5 +33,5 @@ Checkout the [example](https://github.com/deanrih/totp-ts/blob/main/example) fol
 
 IETF RFC Datatracker
 
-[RFC 6238 <Time-Based One-Time Password Algorithm>](https://datatracker.ietf.org/doc/html/rfc6238)
-[RFC 4226 <HMAC-Based One-Time Password Algorithm>](https://datatracker.ietf.org/doc/html/rfc4226)
+- [RFC 6238 <Time-Based One-Time Password Algorithm>](https://datatracker.ietf.org/doc/html/rfc6238)
+- [RFC 4226 <HMAC-Based One-Time Password Algorithm>](https://datatracker.ietf.org/doc/html/rfc4226)
