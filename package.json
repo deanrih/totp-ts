@@ -1,7 +1,7 @@
 {
 	"name": "@deanrih/totp-ts",
 	"version": "1.0.0",
-	"module": "src/main.ts",
+	"module": "./src/main.ts",
 	"type": "module",
 	"license": "MIT",
 	"homepage": "https://deanrih.id/projects/self/totp-ts",
