@@ -6,9 +6,6 @@
 	"license": "MIT",
 	"homepage": "https://deanrih.id/projects/self/totp-ts",
 	"description": "A Time-Based and HMAC-Based One-Time Password Algorithm Implementation",
-	"bugs": {
-		"url": "https://github.com/deanrih/totp-ts/issues"
-	},
 	"author": {
 		"name": "deanrih",
 		"url": "https://github.com/deanrih"
@@ -16,6 +13,9 @@
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/deanrih/totp-ts"
+	},
+	"bugs": {
+		"url": "https://github.com/deanrih/totp-ts/issues"
 	},
 	"keywords": [
 		"RFC6238",
