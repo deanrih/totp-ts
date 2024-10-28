@@ -1,6 +1,6 @@
 # @deanrih/totp-ts
 
-A Time-Based (RFC 6238) and HMAC-Based (RFC 4226) One-Time Password Algorithm Implementation in TypeScript. Used by Ordent project I maintain.
+A Time-Based (RFC 6238) and HMAC-Based (RFC 4226) One-Time Password Algorithm Implementation in TypeScript.
 
 ## Installation
 
