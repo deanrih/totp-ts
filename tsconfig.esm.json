@@ -8,11 +8,12 @@
 		"moduleResolution": "Node",
 		"declaration": true,
 		"outDir": "./dist",
-		"removeComments": false,
+		"removeComments": true,
 		"esModuleInterop": true,
 		"forceConsistentCasingInFileNames": true,
 		"strict": true,
-		"skipLibCheck": true
+		"skipLibCheck": true,
+		"downlevelIteration": false,
 	},
 	"include": [
 		"./src/**/*",
