@@ -1,10 +1,20 @@
-import { createHmac } from "crypto";
+import type { CryptoHasher, SupportedCryptoAlgorithms } from "bun";
+import {
+	createHmac,
+	type BinaryLike,
+	type Encoding,
+	type Hmac,
+	type KeyObject,
+} from "node:crypto";
 
 // References
 // https://datatracker.ietf.org/doc/html/rfc6238
 // https://datatracker.ietf.org/doc/html/rfc4226
 
-const DIGITS_POWER = [1, 10, 100, 1_000, 10_000, 100_000, 1_000_000, 10_000_000, 100_000_000, 1_000_000_000, 10_000_000_000];
+const DIGITS_POWER = [
+	1, 10, 100, 1_000, 10_000, 100_000, 1_000_000, 10_000_000, 100_000_000,
+	1_000_000_000, 10_000_000_000,
+];
 const DOUBLE_DIGITS = [0, 2, 4, 6, 8, 1, 3, 5, 7, 9];
 
 function calculateChecksum(num: number, digits: number): number {
@@ -32,7 +42,68 @@ function calculateChecksum(num: number, digits: number): number {
 	return result;
 }
 
-function generateOTP(
+function isBun(): boolean {
+	return (
+		typeof Bun !== "undefined" ||
+		(process !== undefined ? process.versions["bun"] !== undefined : false)
+	);
+}
+
+function internalHashBun(
+	algorithm: SupportedCryptoAlgorithms,
+	key: string | NodeJS.TypedArray,
+	input: Bun.BlobOrStringOrBuffer,
+	inputEncoding?: Encoding,
+): CryptoHasher {
+	if (!isBun()) {
+		throw new Error(
+			"Bun environment is not detected. This function relies on Bun's functionality to work.",
+		);
+	}
+
+	return new Bun.CryptoHasher(algorithm, key).update(input, inputEncoding);
+}
+
+function internalHashNode(
+	algorithm: string,
+	key: BinaryLike | KeyObject,
+	input: BinaryLike | string,
+	inputEncoding?: Encoding,
+): Hmac {
+	if (inputEncoding !== undefined && typeof input === "string") {
+		return createHmac(algorithm, key).update(input, inputEncoding);
+	}
+
+	return createHmac(algorithm, key).update(input);
+}
+
+function getHash(
+	algorithm: SupportedCryptoAlgorithms | string,
+	key: string | BinaryLike | KeyObject,
+	input: Bun.BlobOrStringOrBuffer | BinaryLike | string,
+	inputEncoding?: Encoding,
+): Buffer {
+	if (isBun()) {
+		return internalHashBun(
+			<SupportedCryptoAlgorithms>algorithm,
+			<string>key,
+			<Bun.BlobOrStringOrBuffer>input,
+			inputEncoding,
+		).digest();
+	}
+
+	algorithm = <string>algorithm;
+	key = <BinaryLike | KeyObject>key;
+
+	if (inputEncoding !== undefined && typeof input === "string") {
+		return internalHashNode(algorithm, key, input, inputEncoding).digest();
+	}
+
+	input = <BinaryLike>input;
+	return internalHashNode(algorithm, key, input).digest();
+}
+
+function generateOtp(
 	secret: string | NodeJS.ArrayBufferView | Buffer,
 	movingFactor: Buffer,
 	digits: number = 6,
@@ -40,21 +111,27 @@ function generateOTP(
 	truncationOffset: number = -1,
 	addChecksum: boolean = false,
 ): string {
-	const finalSecret = typeof secret !== "string" ? secret : Buffer.from(secret, "utf8");
-	const resultDigits = addChecksum ? (digits + 1) : digits;
-	const hmac = createHmac(hmacAlgorithm, finalSecret)
-		.update(movingFactor)
-		.digest();
+	const finalSecret =
+		typeof secret !== "string" ? secret : Buffer.from(secret, "utf8");
+	const resultDigits = addChecksum ? digits + 1 : digits;
+	const hmac = getHash(
+		hmacAlgorithm,
+		<NodeJS.ArrayBufferView>finalSecret,
+		<NodeJS.ArrayBufferView>(movingFactor as unknown),
+	);
+	// const hmac = createHmac(hmacAlgorithm, <NodeJS.ArrayBufferView>finalSecret)
+	// .update(<NodeJS.ArrayBufferView>(movingFactor as unknown))
+	// .digest();
+	// const hmac = createHmac(hmacAlgorithm, finalSecret)
+	// 	.update(movingFactor)
+	// 	.digest();
 
 	// 0xF = 15 or
 	// 0xF = 0000_1111
 	// isolate/mask only the first 4 bits
-	let offset = hmac[hmac.length - 1] & 0xF;
+	let offset = hmac[hmac.length - 1] & 0xf;
 
-	if (
-		(0 <= truncationOffset) &&
-		(truncationOffset < (hmac.length - 4))
-	) {
+	if (0 <= truncationOffset && truncationOffset < hmac.length - 4) {
 		offset = truncationOffset;
 	}
 
@@ -69,12 +146,12 @@ function generateOTP(
 	// 	((hmac[offset + 2] & 0xFF) << 8) |
 	// 	((hmac[offset + 3] & 0xFF) << 0)
 	// );
-	const binary = (hmac.readUInt32BE(offset) & 0x7FFFFFFF);
+	const binary = hmac.readUInt32BE(offset) & 0x7fffffff;
 
 	let code = binary % DIGITS_POWER[digits];
 
 	if (addChecksum) {
-		code = (code * 10) + calculateChecksum(code, digits);
+		code = code * 10 + calculateChecksum(code, digits);
 	}
 
 	return code.toString().padStart(resultDigits, "0");
@@ -105,7 +182,7 @@ function generateOTP(
  * ```
  * @returns The generated OTP as a string, which is a numeric code of the specified length.
  */
-export function generateHOTP(
+export function generateHotp(
 	secret: string | NodeJS.ArrayBufferView | Buffer,
 	counter: number,
 	digits: number = 6,
@@ -120,7 +197,14 @@ export function generateHOTP(
 	// }
 	counterBuffer.writeBigInt64BE(BigInt(counter), 0);
 
-	return generateOTP(secret, counterBuffer, digits, hmacAlgorithm, truncationOffset, addChecksum);
+	return generateOtp(
+		secret,
+		counterBuffer,
+		digits,
+		hmacAlgorithm,
+		truncationOffset,
+		addChecksum,
+	);
 }
 
 /**
@@ -144,7 +228,7 @@ export function generateHOTP(
  * ```
  * @returns The generated OTP as a string, which is a numeric code of the specified length.
  */
-export function generateHOTPSHA1(
+export function generateHotpSha1(
 	secret: string | NodeJS.ArrayBufferView | Buffer,
 	counter: number,
 	digits: number = 6,
@@ -158,7 +242,14 @@ export function generateHOTPSHA1(
 	// }
 	counterBuffer.writeBigInt64BE(BigInt(counter), 0);
 
-	return generateOTP(secret, counterBuffer, digits, "sha1", truncationOffset, addChecksum);
+	return generateOtp(
+		secret,
+		counterBuffer,
+		digits,
+		"sha1",
+		truncationOffset,
+		addChecksum,
+	);
 }
 
 /**
@@ -182,7 +273,7 @@ export function generateHOTPSHA1(
  * ```
  * @returns The generated OTP as a string, which is a numeric code of the specified length.
  */
-export function generateHOTPSHA256(
+export function generateHotpSha256(
 	secret: string | NodeJS.ArrayBufferView | Buffer,
 	counter: number,
 	digits: number = 6,
@@ -196,7 +287,14 @@ export function generateHOTPSHA256(
 	// }
 	counterBuffer.writeBigInt64BE(BigInt(counter), 0);
 
-	return generateOTP(secret, counterBuffer, digits, "sha256", truncationOffset, addChecksum);
+	return generateOtp(
+		secret,
+		counterBuffer,
+		digits,
+		"sha256",
+		truncationOffset,
+		addChecksum,
+	);
 }
 
 /**
@@ -220,7 +318,7 @@ export function generateHOTPSHA256(
  * ```
  * @returns The generated OTP as a string, which is a numeric code of the specified length.
  */
-export function generateHOTPSHA512(
+export function generateHotpSha512(
 	secret: string | NodeJS.ArrayBufferView | Buffer,
 	counter: number,
 	digits: number = 6,
@@ -234,7 +332,14 @@ export function generateHOTPSHA512(
 	// }
 	counterBuffer.writeBigInt64BE(BigInt(counter), 0);
 
-	return generateOTP(secret, counterBuffer, digits, "sha1", truncationOffset, addChecksum);
+	return generateOtp(
+		secret,
+		counterBuffer,
+		digits,
+		"sha1",
+		truncationOffset,
+		addChecksum,
+	);
 }
 
 /**
@@ -272,7 +377,7 @@ export function generateHOTPSHA512(
  * ```
  * @returns The generated OTP as a string, which is a numeric code of the specified length.
  */
-export function generateTOTP(
+export function generateTotp(
 	secret: string | NodeJS.ArrayBufferView | Buffer,
 	time: number = (Date.now() / 1_000) | 0,
 	digits: number = 6,
@@ -282,12 +387,22 @@ export function generateTOTP(
 	truncationOffset: number = -1,
 	addChecksum: boolean = false,
 ): string {
-	const timeInput = (time % 1 !== 0) ? time | 0 : time;
+	const timeInput = time % 1 !== 0 ? time | 0 : time;
 	const timeFactor = ((timeInput - t0) / interval) | 0;
-	const timeHex = Math.floor(timeFactor).toString(16).padStart(16, "0").toUpperCase();
+	const timeHex = Math.floor(timeFactor)
+		.toString(16)
+		.padStart(16, "0")
+		.toUpperCase();
 	const timeBuffer = Buffer.from(timeHex, "hex");
 
-	return generateOTP(secret, timeBuffer, digits, hmacAlgorithm, truncationOffset, addChecksum);
+	return generateOtp(
+		secret,
+		timeBuffer,
+		digits,
+		hmacAlgorithm,
+		truncationOffset,
+		addChecksum,
+	);
 }
 
 /**
@@ -321,7 +436,7 @@ export function generateTOTP(
  * ```
  * @returns The generated OTP as a string, which is a numeric code of the specified length.
  */
-export function generateTOTPSHA1(
+export function generateTotpSha1(
 	secret: string | NodeJS.ArrayBufferView | Buffer,
 	time: number = (Date.now() / 1_000) | 0,
 	digits: number = 6,
@@ -330,7 +445,16 @@ export function generateTOTPSHA1(
 	truncationOffset: number = -1,
 	addChecksum: boolean = false,
 ): string {
-	return generateTOTP(secret, time, digits, t0, interval, "sha1", truncationOffset, addChecksum);
+	return generateTotp(
+		secret,
+		time,
+		digits,
+		t0,
+		interval,
+		"sha1",
+		truncationOffset,
+		addChecksum,
+	);
 }
 
 /**
@@ -364,7 +488,7 @@ export function generateTOTPSHA1(
  * ```
  * @returns The generated OTP as a string, which is a numeric code of the specified length.
  */
-export function generateTOTPSHA256(
+export function generateTotpSha256(
 	secret: string | NodeJS.ArrayBufferView | Buffer,
 	time: number = (Date.now() / 1_000) | 0,
 	digits: number = 6,
@@ -373,7 +497,16 @@ export function generateTOTPSHA256(
 	truncationOffset: number = -1,
 	addChecksum: boolean = false,
 ): string {
-	return generateTOTP(secret, time, digits, t0, interval, "sha256", truncationOffset, addChecksum);
+	return generateTotp(
+		secret,
+		time,
+		digits,
+		t0,
+		interval,
+		"sha256",
+		truncationOffset,
+		addChecksum,
+	);
 }
 
 /**
@@ -407,7 +540,7 @@ export function generateTOTPSHA256(
  * ```
  * @returns The generated OTP as a string, which is a numeric code of the specified length.
  */
-export function generateTOTPSHA512(
+export function generateTotpSha512(
 	secret: string | NodeJS.ArrayBufferView | Buffer,
 	time: number = (Date.now() / 1_000) | 0,
 	digits: number = 6,
@@ -416,5 +549,14 @@ export function generateTOTPSHA512(
 	truncationOffset: number = -1,
 	addChecksum: boolean = false,
 ): string {
-	return generateTOTP(secret, time, digits, t0, interval, "sha512", truncationOffset, addChecksum);
+	return generateTotp(
+		secret,
+		time,
+		digits,
+		t0,
+		interval,
+		"sha512",
+		truncationOffset,
+		addChecksum,
+	);
 }
