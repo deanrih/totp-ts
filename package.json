@@ -1,11 +1,14 @@
 {
 	"name": "@deanrih/totp-ts",
-	"version": "1.0.0",
-	"module": "./src/main.ts",
+	"version": "1.0.0-alpha.2",
+	"main": "./dist/main.cjs",
+	"module": "./dist/main.mjs",
+	"types": "./dist/main.d.ts",
 	"type": "module",
 	"license": "MIT",
 	"homepage": "https://deanrih.id/projects/self/totp-ts",
 	"description": "A Time-Based and HMAC-Based One-Time Password Algorithm Implementation",
+	"readme": "./README.md",
 	"author": {
 		"name": "deanrih",
 		"url": "https://github.com/deanrih"
@@ -31,20 +34,30 @@
 		"2FA"
 	],
 	"exports": {
-		"default": "./dist/main.js",
-		"import": "./dist/main.js",
-		"node": "./dist/main.js",
-		"require": "./dist/main.js"
+		".": {
+			"import": {
+				"types": "./dist/main.d.ts",
+				"default": "./dist/main.mjs"
+			},
+			"require": {
+				"types": "./dist/main.d.cts",
+				"default": "./dist/main.cjs"
+			}
+		}
+	},
+	"publishConfig": {
+		"access": "public"
 	},
 	"scripts": {
 		"dev": "bun run --watch ./example/main.example.ts",
 		"test": "bun test",
-		"build": "rm -fr ./dist && tsc --project tsconfig.esm.json",
-		"release": "npm run build && npm run test && npm publish --access-public"
+		"build": "bun ./build.ts",
+		"release": "bun run test && bun run build && bun publish"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^1.9.4",
-		"@types/bun": "^1.1.12"
+		"@types/bun": "^1.1.12",
+		"tsup": "^8.3.5"
 	},
 	"peerDependencies": {
 		"typescript": "^5.6.3"
