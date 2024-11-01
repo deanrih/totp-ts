@@ -4,8 +4,6 @@ A Time-Based (RFC 6238) and HMAC-Based (RFC 4226) One-Time Password Algorithm Im
 
 ## Installation
 
-> NOTE: The package/library hasn't been actually published yet, these commands are placeholder
-
 ```sh
 # Bun
 bun add @deanrih/totp-ts
@@ -17,14 +15,23 @@ npm install @deanrih/totp-ts
 
 ## Usage
 
-> NOTE: The package/library hasn't been actually published yet, this example is a placeholder
+```ts
+import { generateTotp } from "@deanrih/totp-ts";
+
+const secret = "super_S3cr37-k3y";
+const password = generateTotp(secret);
+
+console.log(`Your One-time Password: [${password}]`);
+```
 
 ```ts
-import { generateTOTP } from "@deanrih/totp-ts";
+import { generateTotp } from "@deanrih/totp-ts";
 
-const code = generateTOTP("secret-key");
+const secret = "super_S3cr37-k3y";
 
-console.log(`Your One-Time Password: [${code}]`);
+console.log(`Your One-time Password: [${generateTotp(secret)}]`);
+await Bun.sleep(30 * 1000); // Wait for 30 seconds to see the new code generated
+console.log(`Your One-time Password: [${generateTotp(secret)}]`);
 ```
 
 Checkout the [example](https://github.com/deanrih/totp-ts/blob/main/example) folder.
