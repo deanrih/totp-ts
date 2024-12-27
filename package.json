@@ -1,9 +1,9 @@
 {
 	"name": "@deanrih/totp-ts",
 	"version": "1.0.0-alpha.2",
-	"main": "./dist/main.cjs",
-	"module": "./dist/main.mjs",
-	"types": "./dist/main.d.ts",
+	"main": "./dist/index.cjs",
+	"module": "./dist/index.mjs",
+	"types": "./dist/index.d.ts",
 	"type": "module",
 	"license": "MIT",
 	"homepage": "https://deanrih.id/projects/self/totp-ts",
@@ -36,12 +36,12 @@
 	"exports": {
 		".": {
 			"import": {
-				"types": "./dist/main.d.ts",
-				"default": "./dist/main.mjs"
+				"types": "./dist/index.d.ts",
+				"default": "./dist/index.mjs"
 			},
 			"require": {
-				"types": "./dist/main.d.cts",
-				"default": "./dist/main.cjs"
+				"types": "./dist/index.d.cts",
+				"default": "./dist/index.cjs"
 			}
 		}
 	},
@@ -49,7 +49,8 @@
 		"access": "public"
 	},
 	"scripts": {
-		"dev": "bun run --watch ./example/main.example.ts",
+		"dev": "bun run --watch ./example/index.example.ts",
+		"case:dev": "bun run --watch ./example/case.example.ts",
 		"test": "bun test",
 		"build": "bun ./build.ts",
 		"release": "bun run test && bun run build && bun publish"
