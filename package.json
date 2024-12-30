@@ -1,6 +1,6 @@
 {
 	"name": "@deanrih/totp-ts",
-	"version": "1.0.0-alpha.3",
+	"version": "1.0.0",
 	"main": "./dist/index.cjs",
 	"module": "./dist/index.mjs",
 	"types": "./dist/index.d.ts",
@@ -57,10 +57,8 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^1.9.4",
-		"@types/bun": "^1.1.12",
-		"tsup": "^8.3.5"
-	},
-	"peerDependencies": {
-		"typescript": "^5.6.3"
+		"@types/bun": "^1.1.14",
+		"tsup": "^8.3.5",
+		"typescript": "5.7.2"
 	}
 }
