@@ -1,3 +1,6 @@
+import { base32Decode } from "@deanrih/ts-lib-codec-string";
+
+import type { OtpHashAlgorithm, OtpSecretEncoding } from "./harness.internal";
 import { generateOtp } from "./harness.internal";
 
 /**
@@ -26,10 +29,38 @@ import { generateOtp } from "./harness.internal";
  * @returns The generated OTP as a string, which is a numeric code of the specified length.
  */
 function generateHotp(
-	secret: string | NodeJS.ArrayBufferView | Buffer,
-	counter: number,
+	secret: Buffer,
+	secretEncoding?: "buffer",
+	counter?: number,
+	digits?: number,
+	hmacAlgorithm?: OtpHashAlgorithm,
+	truncationOffset?: number,
+	addChecksum?: boolean,
+): string;
+function generateHotp(
+	secret: string,
+	secretEncoding?: "base32",
+	counter?: number,
+	digits?: number,
+	hmacAlgorithm?: OtpHashAlgorithm,
+	truncationOffset?: number,
+	addChecksum?: boolean,
+): string;
+function generateHotp(
+	secret: string,
+	secretEncoding?: OtpSecretEncoding,
+	counter?: number,
+	digits?: number,
+	hmacAlgorithm?: OtpHashAlgorithm,
+	truncationOffset?: number,
+	addChecksum?: boolean,
+): string;
+function generateHotp(
+	secret: string | Buffer,
+	secretEncoding: OtpSecretEncoding = "buffer",
+	counter: number = 0,
 	digits: number = 6,
-	hmacAlgorithm: string = "sha256",
+	hmacAlgorithm: OtpHashAlgorithm = "sha256",
 	truncationOffset: number = -1,
 	addChecksum: boolean = false,
 ): string {
@@ -40,14 +71,14 @@ function generateHotp(
 	// }
 	counterBuffer.writeBigInt64BE(BigInt(counter), 0);
 
-	return generateOtp(
-		secret,
-		counterBuffer,
-		digits,
-		hmacAlgorithm,
-		truncationOffset,
-		addChecksum,
-	);
+	const secretBuffer =
+		typeof secret !== "string"
+			? secret
+			: secretEncoding === "base32"
+				? base32Decode(secret)
+				: Buffer.from(secret, <BufferEncoding>secretEncoding);
+
+	return generateOtp(secretBuffer, counterBuffer, digits, hmacAlgorithm, truncationOffset, addChecksum);
 }
 
 /**
@@ -72,27 +103,42 @@ function generateHotp(
  * @returns The generated OTP as a string, which is a numeric code of the specified length.
  */
 function generateHotpSha1(
-	secret: string | NodeJS.ArrayBufferView | Buffer,
-	counter: number,
+	secret: Buffer,
+	secretEncoding?: "buffer",
+	counter?: number,
+	digits?: number,
+	truncationOffset?: number,
+	addChecksum?: boolean,
+): string;
+function generateHotpSha1(
+	secret: string,
+	secretEncoding?: "base32",
+	counter?: number,
+	digits?: number,
+	truncationOffset?: number,
+	addChecksum?: boolean,
+): string;
+function generateHotpSha1(
+	secret: string,
+	secretEncoding?: OtpSecretEncoding,
+	counter?: number,
+	digits?: number,
+	truncationOffset?: number,
+	addChecksum?: boolean,
+): string;
+function generateHotpSha1(
+	secret: string | Buffer,
+	secretEncoding: OtpSecretEncoding = "buffer",
+	counter: number = 0,
 	digits: number = 6,
 	truncationOffset: number = -1,
 	addChecksum: boolean = false,
 ): string {
-	const counterBuffer = Buffer.alloc(8);
-	// for (let idx = counterBuffer.length - 1; idx >= 0; idx--) {
-	// 	counterBuffer[idx] = counter & 0xFF;
-	// 	counter >>= 8;
-	// }
-	counterBuffer.writeBigInt64BE(BigInt(counter), 0);
+	if (typeof secret === "string") {
+		return generateHotp(secret, secretEncoding, counter, digits, "sha1", truncationOffset, addChecksum);
+	}
 
-	return generateOtp(
-		secret,
-		counterBuffer,
-		digits,
-		"sha1",
-		truncationOffset,
-		addChecksum,
-	);
+	return generateHotp(secret, "buffer", counter, digits, "sha1", truncationOffset, addChecksum);
 }
 
 /**
@@ -117,27 +163,42 @@ function generateHotpSha1(
  * @returns The generated OTP as a string, which is a numeric code of the specified length.
  */
 function generateHotpSha256(
-	secret: string | NodeJS.ArrayBufferView | Buffer,
-	counter: number,
+	secret: Buffer,
+	secretEncoding?: "buffer",
+	counter?: number,
+	digits?: number,
+	truncationOffset?: number,
+	addChecksum?: boolean,
+): string;
+function generateHotpSha256(
+	secret: string,
+	secretEncoding?: "base32",
+	counter?: number,
+	digits?: number,
+	truncationOffset?: number,
+	addChecksum?: boolean,
+): string;
+function generateHotpSha256(
+	secret: string,
+	secretEncoding?: OtpSecretEncoding,
+	counter?: number,
+	digits?: number,
+	truncationOffset?: number,
+	addChecksum?: boolean,
+): string;
+function generateHotpSha256(
+	secret: string | Buffer,
+	secretEncoding: OtpSecretEncoding = "buffer",
+	counter: number = 0,
 	digits: number = 6,
 	truncationOffset: number = -1,
 	addChecksum: boolean = false,
 ): string {
-	const counterBuffer = Buffer.alloc(8);
-	// for (let idx = counterBuffer.length - 1; idx >= 0; idx--) {
-	// 	counterBuffer[idx] = counter & 0xFF;
-	// 	counter >>= 8;
-	// }
-	counterBuffer.writeBigInt64BE(BigInt(counter), 0);
+	if (typeof secret === "string") {
+		return generateHotp(secret, secretEncoding, counter, digits, "sha256", truncationOffset, addChecksum);
+	}
 
-	return generateOtp(
-		secret,
-		counterBuffer,
-		digits,
-		"sha256",
-		truncationOffset,
-		addChecksum,
-	);
+	return generateHotp(secret, "buffer", counter, digits, "sha256", truncationOffset, addChecksum);
 }
 
 /**
@@ -162,32 +223,42 @@ function generateHotpSha256(
  * @returns The generated OTP as a string, which is a numeric code of the specified length.
  */
 function generateHotpSha512(
-	secret: string | NodeJS.ArrayBufferView | Buffer,
-	counter: number,
+	secret: Buffer,
+	secretEncoding?: "buffer",
+	counter?: number,
+	digits?: number,
+	truncationOffset?: number,
+	addChecksum?: boolean,
+): string;
+function generateHotpSha512(
+	secret: string,
+	secretEncoding?: "base32",
+	counter?: number,
+	digits?: number,
+	truncationOffset?: number,
+	addChecksum?: boolean,
+): string;
+function generateHotpSha512(
+	secret: string,
+	secretEncoding?: OtpSecretEncoding,
+	counter?: number,
+	digits?: number,
+	truncationOffset?: number,
+	addChecksum?: boolean,
+): string;
+function generateHotpSha512(
+	secret: string | Buffer,
+	secretEncoding: OtpSecretEncoding = "buffer",
+	counter: number = 0,
 	digits: number = 6,
 	truncationOffset: number = -1,
 	addChecksum: boolean = false,
 ): string {
-	const counterBuffer = Buffer.alloc(8);
-	// for (let idx = counterBuffer.length - 1; idx >= 0; idx--) {
-	// 	counterBuffer[idx] = counter & 0xFF;
-	// 	counter >>= 8;
-	// }
-	counterBuffer.writeBigInt64BE(BigInt(counter), 0);
+	if (typeof secret === "string") {
+		return generateHotp(secret, secretEncoding, counter, digits, "sha512", truncationOffset, addChecksum);
+	}
 
-	return generateOtp(
-		secret,
-		counterBuffer,
-		digits,
-		"sha1",
-		truncationOffset,
-		addChecksum,
-	);
+	return generateHotp(secret, "buffer", counter, digits, "sha512", truncationOffset, addChecksum);
 }
 
-export {
-	generateHotp,
-	generateHotpSha1,
-	generateHotpSha256,
-	generateHotpSha512,
-};
+export { generateHotp, generateHotpSha1, generateHotpSha256, generateHotpSha512 };
