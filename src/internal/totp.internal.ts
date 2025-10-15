@@ -1,3 +1,6 @@
+import { base32Decode } from "@deanrih/ts-lib-codec-string";
+
+import type { OtpHashAlgorithm, OtpSecretEncoding } from "./harness.internal";
 import { generateOtp } from "./harness.internal";
 
 /**
@@ -36,33 +39,76 @@ import { generateOtp } from "./harness.internal";
  * @returns The generated OTP as a string, which is a numeric code of the specified length.
  */
 function generateTotp(
-	secret: string | NodeJS.ArrayBufferView | Buffer,
+	secret: Buffer,
+	secretEncoding?: "buffer",
+	time?: number,
+	digits?: number,
+	t0?: number,
+	interval?: number,
+	hmacAlgorithm?: OtpHashAlgorithm,
+	truncationOffset?: number,
+	addChecksum?: boolean,
+): string;
+function generateTotp(
+	secret: string,
+	secretEncoding?: "base32",
+	time?: number,
+	digits?: number,
+	t0?: number,
+	interval?: number,
+	hmacAlgorithm?: OtpHashAlgorithm,
+	truncationOffset?: number,
+	addChecksum?: boolean,
+): string;
+function generateTotp(
+	secret: string,
+	secretEncoding?: OtpSecretEncoding,
+	time?: number,
+	digits?: number,
+	t0?: number,
+	interval?: number,
+	hmacAlgorithm?: OtpHashAlgorithm,
+	truncationOffset?: number,
+	addChecksum?: boolean,
+): string;
+function generateTotp(
+	secret: string | Buffer,
+	secretEncoding: OtpSecretEncoding = "buffer",
 	// get the seconds instead of milliseconds by / 1_000 and then remove the fraction by ORing with 0
 	time: number = (Date.now() / 1_000) | 0,
 	digits: number = 6,
 	t0: number = 0,
 	interval: number = 30,
-	hmacAlgorithm: string = "sha256",
+	hmacAlgorithm: OtpHashAlgorithm = "sha256",
 	truncationOffset: number = -1,
 	addChecksum: boolean = false,
 ): string {
 	const timeInput = time % 1 !== 0 ? time | 0 : time;
 	const timeFactor = ((timeInput - t0) / interval) | 0;
-	const timeHex = Math.floor(timeFactor)
-		.toString(16)
-		.padStart(16, "0")
-		.toUpperCase();
+	const timeHex = Math.floor(timeFactor).toString(16).padStart(16, "0").toUpperCase();
 	const timeBuffer = Buffer.from(timeHex, "hex");
 
-	return generateOtp(
-		secret,
-		timeBuffer,
-		digits,
-		hmacAlgorithm,
-		truncationOffset,
-		addChecksum,
-	);
+	const secretBuffer =
+		typeof secret !== "string"
+			? secret
+			: secretEncoding === "base32"
+				? base32Decode(secret)
+				: Buffer.from(secret, <BufferEncoding>secretEncoding);
+
+	return generateOtp(secretBuffer, timeBuffer, digits, hmacAlgorithm, truncationOffset, addChecksum);
 }
+
+// function generateOtp(
+// 	secret: string,
+// 	encoding: OtpSecretEncoding = "base32",
+// 	movingFactor: Buffer,
+// 	digits: number = 6,
+// 	algorithm: OtpHashAlgorithm = "sha1",
+// 	truncationOffset: number = -1,
+// 	addChecksum: boolean = false,
+// ) {
+// 	const secretBuffer = encoding === "base32" ? base32Decode(secret) : Buffer.from(secret, encoding);
+// }
 
 /**
  * Generates a Time-Based One-Time Password (TOTP) based on the given parameters. Primarily secret and time (moving factor).
@@ -96,7 +142,38 @@ function generateTotp(
  * @returns The generated OTP as a string, which is a numeric code of the specified length.
  */
 function generateTotpSha1(
-	secret: string | NodeJS.ArrayBufferView | Buffer,
+	secret: Buffer,
+	secretEncoding?: "buffer",
+	time?: number,
+	digits?: number,
+	t0?: number,
+	interval?: number,
+	truncationOffset?: number,
+	addChecksum?: boolean,
+): string;
+function generateTotpSha1(
+	secret: string,
+	secretEncoding?: "base32",
+	time?: number,
+	digits?: number,
+	t0?: number,
+	interval?: number,
+	truncationOffset?: number,
+	addChecksum?: boolean,
+): string;
+function generateTotpSha1(
+	secret: string,
+	secretEncoding?: OtpSecretEncoding,
+	time?: number,
+	digits?: number,
+	t0?: number,
+	interval?: number,
+	truncationOffset?: number,
+	addChecksum?: boolean,
+): string;
+function generateTotpSha1(
+	secret: string | Buffer,
+	secretEncoding: OtpSecretEncoding = "buffer",
 	time: number = (Date.now() / 1_000) | 0,
 	digits: number = 6,
 	t0: number = 0,
@@ -104,16 +181,11 @@ function generateTotpSha1(
 	truncationOffset: number = -1,
 	addChecksum: boolean = false,
 ): string {
-	return generateTotp(
-		secret,
-		time,
-		digits,
-		t0,
-		interval,
-		"sha1",
-		truncationOffset,
-		addChecksum,
-	);
+	if (typeof secret === "string") {
+		return generateTotp(secret, secretEncoding, time, digits, t0, interval, "sha1", truncationOffset, addChecksum);
+	}
+
+	return generateTotp(secret, "buffer", time, digits, t0, interval, "sha1", truncationOffset, addChecksum);
 }
 
 /**
@@ -148,7 +220,38 @@ function generateTotpSha1(
  * @returns The generated OTP as a string, which is a numeric code of the specified length.
  */
 function generateTotpSha256(
-	secret: string | NodeJS.ArrayBufferView | Buffer,
+	secret: Buffer,
+	secretEncoding?: "buffer",
+	time?: number,
+	digits?: number,
+	t0?: number,
+	interval?: number,
+	truncationOffset?: number,
+	addChecksum?: boolean,
+): string;
+function generateTotpSha256(
+	secret: string,
+	secretEncoding?: "base32",
+	time?: number,
+	digits?: number,
+	t0?: number,
+	interval?: number,
+	truncationOffset?: number,
+	addChecksum?: boolean,
+): string;
+function generateTotpSha256(
+	secret: string,
+	secretEncoding?: OtpSecretEncoding,
+	time?: number,
+	digits?: number,
+	t0?: number,
+	interval?: number,
+	truncationOffset?: number,
+	addChecksum?: boolean,
+): string;
+function generateTotpSha256(
+	secret: string | Buffer,
+	secretEncoding: OtpSecretEncoding = "buffer",
 	time: number = (Date.now() / 1_000) | 0,
 	digits: number = 6,
 	t0: number = 0,
@@ -156,16 +259,11 @@ function generateTotpSha256(
 	truncationOffset: number = -1,
 	addChecksum: boolean = false,
 ): string {
-	return generateTotp(
-		secret,
-		time,
-		digits,
-		t0,
-		interval,
-		"sha256",
-		truncationOffset,
-		addChecksum,
-	);
+	if (typeof secret === "string") {
+		return generateTotp(secret, secretEncoding, time, digits, t0, interval, "sha256", truncationOffset, addChecksum);
+	}
+
+	return generateTotp(secret, "buffer", time, digits, t0, interval, "sha256", truncationOffset, addChecksum);
 }
 
 /**
@@ -200,7 +298,38 @@ function generateTotpSha256(
  * @returns The generated OTP as a string, which is a numeric code of the specified length.
  */
 function generateTotpSha512(
-	secret: string | NodeJS.ArrayBufferView | Buffer,
+	secret: Buffer,
+	secretEncoding?: "buffer",
+	time?: number,
+	digits?: number,
+	t0?: number,
+	interval?: number,
+	truncationOffset?: number,
+	addChecksum?: boolean,
+): string;
+function generateTotpSha512(
+	secret: string,
+	secretEncoding?: "base32",
+	time?: number,
+	digits?: number,
+	t0?: number,
+	interval?: number,
+	truncationOffset?: number,
+	addChecksum?: boolean,
+): string;
+function generateTotpSha512(
+	secret: string,
+	secretEncoding?: OtpSecretEncoding,
+	time?: number,
+	digits?: number,
+	t0?: number,
+	interval?: number,
+	truncationOffset?: number,
+	addChecksum?: boolean,
+): string;
+function generateTotpSha512(
+	secret: string | Buffer,
+	secretEncoding: OtpSecretEncoding = "buffer",
 	time: number = (Date.now() / 1_000) | 0,
 	digits: number = 6,
 	t0: number = 0,
@@ -208,21 +337,11 @@ function generateTotpSha512(
 	truncationOffset: number = -1,
 	addChecksum: boolean = false,
 ): string {
-	return generateTotp(
-		secret,
-		time,
-		digits,
-		t0,
-		interval,
-		"sha512",
-		truncationOffset,
-		addChecksum,
-	);
+	if (typeof secret === "string") {
+		return generateTotp(secret, secretEncoding, time, digits, t0, interval, "sha512", truncationOffset, addChecksum);
+	}
+
+	return generateTotp(secret, "buffer", time, digits, t0, interval, "sha512", truncationOffset, addChecksum);
 }
 
-export {
-	generateTotp,
-	generateTotpSha1,
-	generateTotpSha256,
-	generateTotpSha512,
-};
+export { generateTotp, generateTotpSha1, generateTotpSha256, generateTotpSha512 };
