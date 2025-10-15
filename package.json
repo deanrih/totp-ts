@@ -1,13 +1,10 @@
 {
 	"name": "@deanrih/totp-ts",
-	"version": "1.0.1",
-	"main": "./dist/index.cjs",
-	"module": "./dist/index.mjs",
-	"types": "./dist/index.d.ts",
+	"description": "A Time-Based and HMAC-Based One-Time Password Algorithm Implementation",
+	"version": "1.1.0",
 	"type": "module",
 	"license": "MIT",
 	"homepage": "https://deanrih.id/projects/self/totp-ts",
-	"description": "A Time-Based and HMAC-Based One-Time Password Algorithm Implementation",
 	"readme": "./README.md",
 	"author": {
 		"name": "deanrih",
@@ -33,17 +30,18 @@
 		"One-Time Password",
 		"2FA"
 	],
+	"sideEffects": false,
+	"main": "./dist/index.js",
+	"module": "./dist/index.js",
+	"types": "./dist/index.d.ts",
 	"exports": {
 		".": {
 			"import": {
 				"types": "./dist/index.d.ts",
-				"default": "./dist/index.mjs"
-			},
-			"require": {
-				"types": "./dist/index.d.cts",
-				"default": "./dist/index.cjs"
+				"default": "./dist/index.js"
 			}
-		}
+		},
+		"./package.json": "./package.json"
 	},
 	"publishConfig": {
 		"access": "public"
@@ -52,13 +50,17 @@
 		"dev": "bun run --watch ./example/index.example.ts",
 		"case:dev": "bun run --watch ./example/case.example.ts",
 		"test": "bun test",
-		"build": "bun ./build.ts",
+		"build": "bunx --bun bunup",
 		"release": "bun run test && bun run build && bun publish"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^1.9.4",
-		"@types/bun": "^1.1.14",
-		"tsup": "^8.3.5",
-		"typescript": "5.7.2"
+		"@biomejs/biome": "latest",
+		"@types/bun": "latest",
+		"bunup": "latest",
+		"typescript": "latest"
+	},
+	"peerDependencies": {},
+	"dependencies": {
+		"@deanrih/ts-lib-codec-string": "latest"
 	}
 }
