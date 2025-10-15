@@ -1,6 +1,9 @@
 import type { CryptoHasher, SupportedCryptoAlgorithms } from "bun";
-import type { BinaryLike, Encoding, Hmac, KeyObject } from "node:crypto";
+import type { Hmac } from "node:crypto";
 import { createHmac } from "node:crypto";
+
+type OtpHashAlgorithm = "sha1" | "sha256" | "sha512";
+type OtpSecretEncoding = "base32" | "buffer" | BufferEncoding;
 
 const unreasonableDigitError = Error("Unreasonable Digit Length");
 
@@ -8,13 +11,23 @@ const unreasonableDigitError = Error("Unreasonable Digit Length");
 // https://datatracker.ietf.org/doc/html/rfc6238
 // https://datatracker.ietf.org/doc/html/rfc4226
 
-// biome-ignore format:
+// biome-ignore format: style
 const DIGITS_POWER = [
-	1, 10, 100, // 0 - 2
-	1_000, 10_000, 100_000, // 3 - 5
-	1_000_000, 10_000_000, 100_000_000, // 6 - 8
-	1_000_000_000, 10_000_000_000, 100_000_000_000, // 9 - 11
-	1_000_000_000_000, 10_000_000_000_000, 100_000_000_000_000, // 12 - 14
+	1,
+	10,
+	100, // 0 - 2
+	1_000,
+	10_000,
+	100_000, // 3 - 5
+	1_000_000,
+	10_000_000,
+	100_000_000, // 6 - 8
+	1_000_000_000,
+	10_000_000_000,
+	100_000_000_000, // 9 - 11
+	1_000_000_000_000,
+	10_000_000_000_000,
+	100_000_000_000_000, // 12 - 14
 ];
 const DOUBLE_DIGITS = [0, 2, 4, 6, 8, 1, 3, 5, 7, 9];
 
@@ -44,71 +57,46 @@ function calculateChecksum(num: number, digits: number): number {
 }
 
 function isBun(): boolean {
-	return (
-		typeof Bun !== "undefined" ||
-		(process !== undefined ? process.versions["bun"] !== undefined : false)
-	);
+	return typeof Bun !== "undefined" || (process !== undefined ? process.versions["bun"] !== undefined : false);
 }
 
 function internalHashBun(
 	algorithm: SupportedCryptoAlgorithms,
-	key: string | NodeJS.TypedArray,
-	input: Bun.BlobOrStringOrBuffer,
-	inputEncoding?: Encoding,
+	key: Uint8Array,
+	input: Uint8Array,
 ): CryptoHasher {
 	if (!isBun()) {
-		throw new Error(
-			"Bun environment is not detected. This function relies on Bun's functionality to work.",
-		);
+		throw new Error("Bun environment is not detected. This function relies on Bun's functionality to work.");
 	}
 
-	return new Bun.CryptoHasher(algorithm, key).update(input, inputEncoding);
+	return new Bun.CryptoHasher(algorithm, key).update(input);
 }
 
 function internalHashNode(
 	algorithm: string,
-	key: BinaryLike | KeyObject,
-	input: BinaryLike | string,
-	inputEncoding?: Encoding,
+	key: Uint8Array,
+	input: Uint8Array,
 ): Hmac {
-	if (inputEncoding !== undefined && typeof input === "string") {
-		return createHmac(algorithm, key).update(input, inputEncoding);
-	}
-
 	return createHmac(algorithm, key).update(input);
 }
 
 function getHash(
-	algorithm: SupportedCryptoAlgorithms | string,
-	key: string | BinaryLike | KeyObject,
-	input: Bun.BlobOrStringOrBuffer | BinaryLike | string,
-	inputEncoding?: Encoding,
+	algorithm: OtpHashAlgorithm,
+	key: Buffer,
+	input: Buffer,
 ): Buffer {
-	if (isBun()) {
-		return internalHashBun(
-			<SupportedCryptoAlgorithms>algorithm,
-			<string>key,
-			<Bun.BlobOrStringOrBuffer>input,
-			inputEncoding,
-		).digest();
-	}
-
-	algorithm = <string>algorithm;
-	key = <BinaryLike | KeyObject>key;
-
-	if (inputEncoding !== undefined && typeof input === "string") {
-		return internalHashNode(algorithm, key, input, inputEncoding).digest();
-	}
-
-	input = <BinaryLike>input;
-	return internalHashNode(algorithm, key, input).digest();
+	const keyByteArray = new Uint8Array(key);
+	const inpByteArray = new Uint8Array(input);
+	const hasher = isBun() ? internalHashBun : internalHashNode;
+	const result = hasher(algorithm, keyByteArray, inpByteArray).digest();
+	return result;
 }
 
 function generateOtp(
-	secret: string | NodeJS.ArrayBufferView | Buffer,
+	secret: Buffer,
 	movingFactor: Buffer,
 	digits: number = 6,
-	hmacAlgorithm: string = "sha256",
+	algorithm: OtpHashAlgorithm = "sha1",
 	truncationOffset: number = -1,
 	addChecksum: boolean = false,
 ): string {
@@ -116,27 +104,16 @@ function generateOtp(
 		throw unreasonableDigitError;
 	}
 
-	const finalSecret =
-		typeof secret !== "string" ? secret : Buffer.from(secret, "utf8");
-	const resultDigits = addChecksum ? digits + 1 : digits;
-	const hmac = getHash(
-		hmacAlgorithm,
-		<NodeJS.ArrayBufferView>finalSecret,
-		<NodeJS.ArrayBufferView>(movingFactor as unknown),
-	);
-	// const hmac = createHmac(hmacAlgorithm, <NodeJS.ArrayBufferView>finalSecret)
-	// .update(<NodeJS.ArrayBufferView>(movingFactor as unknown))
-	// .digest();
-	// const hmac = createHmac(hmacAlgorithm, finalSecret)
-	// 	.update(movingFactor)
-	// 	.digest();
+	digits += addChecksum ? 1 : 0;
+
+	const hash = getHash(algorithm, secret, movingFactor);
 
 	// 0xF = 15 or
 	// 0xF = 0000_1111
 	// isolate/mask only the first 4 bits
-	let offset = hmac[hmac.length - 1] & 0xf;
+	let offset = hash[hash.length - 1] & 0xf;
 
-	if (0 <= truncationOffset && truncationOffset < hmac.length - 4) {
+	if (0 <= truncationOffset && truncationOffset < hash.length - 4) {
 		offset = truncationOffset;
 	}
 
@@ -151,7 +128,7 @@ function generateOtp(
 	// 	((hmac[offset + 2] & 0xFF) << 8) |
 	// 	((hmac[offset + 3] & 0xFF) << 0)
 	// );
-	const binary = hmac.readUInt32BE(offset) & 0x7fffffff;
+	const binary = hash.readUInt32BE(offset) & 0x7fffffff;
 
 	let code = binary % DIGITS_POWER[digits];
 
@@ -159,7 +136,8 @@ function generateOtp(
 		code = code * 10 + calculateChecksum(code, digits);
 	}
 
-	return code.toString().padStart(resultDigits, "0");
+	return code.toString().padStart(digits, "0");
 }
 
+export type { OtpHashAlgorithm, OtpSecretEncoding };
 export { generateOtp };
