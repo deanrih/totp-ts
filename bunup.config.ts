@@ -8,4 +8,8 @@ export default defineConfig({
 	outDir: "./dist",
 	splitting: true, //nodeProtocol
 	// exports: true,
+	// noExternal: ["@deanrih/ts-lib-codec-string"],
+	unused: {
+		level: "error",
+	},
 });
