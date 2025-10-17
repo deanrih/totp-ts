@@ -1,7 +1,7 @@
 {
 	"name": "@deanrih/totp-ts",
 	"description": "A Time-Based and HMAC-Based One-Time Password Algorithm Implementation",
-	"version": "1.1.0",
+	"version": "1.2.0",
 	"type": "module",
 	"license": "MIT",
 	"homepage": "https://deanrih.id/projects/self/totp-ts",
@@ -59,8 +59,8 @@
 		"bunup": "latest",
 		"typescript": "latest"
 	},
-	"peerDependencies": {},
-	"dependencies": {
+	"peerDependencies": {
 		"@deanrih/ts-lib-codec-string": "latest"
-	}
+	},
+	"dependencies": {}
 }
