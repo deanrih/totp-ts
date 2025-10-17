@@ -57,7 +57,7 @@ function generateHotp(
 ): string;
 function generateHotp(
 	secret: string | Buffer,
-	secretEncoding: OtpSecretEncoding = "buffer",
+	secretEncoding: OtpSecretEncoding = "base32",
 	counter: number = 0,
 	digits: number = 6,
 	hmacAlgorithm: OtpHashAlgorithm = "sha256",
@@ -128,7 +128,7 @@ function generateHotpSha1(
 ): string;
 function generateHotpSha1(
 	secret: string | Buffer,
-	secretEncoding: OtpSecretEncoding = "buffer",
+	secretEncoding: OtpSecretEncoding = "base32",
 	counter: number = 0,
 	digits: number = 6,
 	truncationOffset: number = -1,
@@ -188,7 +188,7 @@ function generateHotpSha256(
 ): string;
 function generateHotpSha256(
 	secret: string | Buffer,
-	secretEncoding: OtpSecretEncoding = "buffer",
+	secretEncoding: OtpSecretEncoding = "base32",
 	counter: number = 0,
 	digits: number = 6,
 	truncationOffset: number = -1,
@@ -248,7 +248,7 @@ function generateHotpSha512(
 ): string;
 function generateHotpSha512(
 	secret: string | Buffer,
-	secretEncoding: OtpSecretEncoding = "buffer",
+	secretEncoding: OtpSecretEncoding = "base32",
 	counter: number = 0,
 	digits: number = 6,
 	truncationOffset: number = -1,
