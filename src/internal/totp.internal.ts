@@ -73,7 +73,7 @@ function generateTotp(
 ): string;
 function generateTotp(
 	secret: string | Buffer,
-	secretEncoding: OtpSecretEncoding = "buffer",
+	secretEncoding: OtpSecretEncoding = "base32",
 	// get the seconds instead of milliseconds by / 1_000 and then remove the fraction by ORing with 0
 	time: number = (Date.now() / 1_000) | 0,
 	digits: number = 6,
@@ -173,7 +173,7 @@ function generateTotpSha1(
 ): string;
 function generateTotpSha1(
 	secret: string | Buffer,
-	secretEncoding: OtpSecretEncoding = "buffer",
+	secretEncoding: OtpSecretEncoding = "base32",
 	time: number = (Date.now() / 1_000) | 0,
 	digits: number = 6,
 	t0: number = 0,
@@ -251,7 +251,7 @@ function generateTotpSha256(
 ): string;
 function generateTotpSha256(
 	secret: string | Buffer,
-	secretEncoding: OtpSecretEncoding = "buffer",
+	secretEncoding: OtpSecretEncoding = "base32",
 	time: number = (Date.now() / 1_000) | 0,
 	digits: number = 6,
 	t0: number = 0,
@@ -329,7 +329,7 @@ function generateTotpSha512(
 ): string;
 function generateTotpSha512(
 	secret: string | Buffer,
-	secretEncoding: OtpSecretEncoding = "buffer",
+	secretEncoding: OtpSecretEncoding = "base32",
 	time: number = (Date.now() / 1_000) | 0,
 	digits: number = 6,
 	t0: number = 0,
