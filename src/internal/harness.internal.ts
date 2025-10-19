@@ -129,4 +129,4 @@ function generateOtp(secret: Buffer, movingFactor: Buffer, options?: OtpGenerati
 }
 
 export type { OtpDigitLength, OtpHashAlgorithm, OtpSecret, OtpSecretStringEncoding };
-export { generateOtp };
+export { generateOtp, otpDigitLength };
