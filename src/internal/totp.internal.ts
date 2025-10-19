@@ -1,7 +1,7 @@
 import { base32Decode } from "@deanrih/ts-lib-codec-string";
 
 import type { OtpSecret, OtpHashAlgorithm, OtpSecretStringEncoding, OtpDigitLength } from "./harness.internal";
-import { generateOtp } from "./harness.internal";
+import { generateOtp, numberToBytes } from "./harness.internal";
 
 interface TotpOptions {
 	addChecksum?: boolean;
@@ -31,9 +31,8 @@ function generateTotp(secret: OtpSecret, options?: TotpOptions): string {
 	const time = options?.time ?? (Date.now() / 1_000) | 0;
 
 	const timeInput = time % 1 !== 0 ? time | 0 : time;
-	const timeFactor = ((timeInput - t0) / interval) | 0;
-	const timeHex = Math.floor(timeFactor).toString(16).padStart(16, "0").toUpperCase();
-	const movingFactorBuffer = Buffer.from(timeHex, "hex");
+	const timeFactor = Math.floor(((timeInput - t0) / interval) | 0);
+	const movingFactorBuffer = numberToBytes(timeFactor);
 
 	let secretBuffer: Buffer;
 
