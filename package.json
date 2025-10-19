@@ -1,7 +1,7 @@
 {
 	"name": "@deanrih/totp-ts",
 	"description": "A Time-Based and HMAC-Based One-Time Password Algorithm Implementation",
-	"version": "1.2.0",
+	"version": "2.0.0",
 	"type": "module",
 	"license": "MIT",
 	"homepage": "https://deanrih.id/projects/self/totp-ts",
@@ -41,6 +41,24 @@
 				"default": "./dist/index.js"
 			}
 		},
+		"./hotp": {
+			"import": {
+				"types": "./dist/index.hotp.d.ts",
+				"default": "./dist/index.hotp.js"
+			}
+		},
+		"./totp": {
+			"import": {
+				"types": "./dist/index.totp.d.ts",
+				"default": "./dist/index.totp.js"
+			}
+		},
+		"./util": {
+			"import": {
+				"types": "./dist/index.util.d.ts",
+				"default": "./dist/index.util.js"
+			}
+		},
 		"./package.json": "./package.json"
 	},
 	"publishConfig": {
@@ -57,6 +75,7 @@
 		"@biomejs/biome": "latest",
 		"@types/bun": "latest",
 		"bunup": "latest",
+		"mitata": "latest",
 		"typescript": "latest"
 	},
 	"peerDependencies": {
