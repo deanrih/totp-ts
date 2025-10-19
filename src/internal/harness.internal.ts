@@ -4,6 +4,7 @@ import { createHmac } from "node:crypto";
 
 const unreasonableDigitError: Error = Error("Unreasonable Digit Length");
 const otpDigitLength = [6, 8, 10] as const;
+const nybbleMask = 0xf; // 15 or 0000_1111, mask first 4 bits or nibble/nybble
 
 type OtpSecret = string | Buffer;
 type OtpType = "hotp" | "totp";
@@ -99,10 +100,7 @@ function generateOtp(secret: Buffer, movingFactor: Buffer, options?: OtpGenerati
 
 	const hash = getHash(algorithm, secret, movingFactor);
 
-	// 0xF = 15 or
-	// 0xF = 0000_1111
-	// isolate/mask only the first 4 bits
-	let offset = hash[hash.length - 1] & 0xf;
+	let offset = hash[hash.length - 1] & nybbleMask;
 
 	if (0 <= truncationOffset && truncationOffset < hash.length - 4) {
 		offset = truncationOffset;
@@ -111,17 +109,15 @@ function generateOtp(secret: Buffer, movingFactor: Buffer, options?: OtpGenerati
 	// masking with 0x7FFFFFFF
 	// 0111_1111_1111_1111_1111_1111_1111_1111
 	// and shifting the value to the left
-	// const binary = (
-	// 	// 0x7F = 0111_1111
-	// 	// 0xFF = 1111_1111
-	// 	((hmac[offset + 0] & 0x7F) << 24) |
-	// 	((hmac[offset + 1] & 0xFF) << 16) |
-	// 	((hmac[offset + 2] & 0xFF) << 8) |
-	// 	((hmac[offset + 3] & 0xFF) << 0)
-	// );
-	const binary = hash.readUInt32BE(offset) & 0x7fffffff;
+	const bytes =
+		// 0x7F = 0111_1111
+		// 0xFF = 1111_1111
+		((hash[offset + 0] & 0x7f) << 24) |
+		((hash[offset + 1] & 0xff) << 16) |
+		((hash[offset + 2] & 0xff) << 8) |
+		((hash[offset + 3] & 0xff) << 0);
 
-	let code = binary % DIGITS_POWER[digits];
+	let code = bytes % DIGITS_POWER[digits];
 
 	if (addChecksum) {
 		code = code * 10 + calculateChecksum(code, digits);
