@@ -1,7 +1,7 @@
 import { base32Decode } from "@deanrih/ts-lib-codec-string";
 
 import type { OtpSecret, OtpHashAlgorithm, OtpSecretStringEncoding, OtpDigitLength } from "./harness.internal";
-import { generateOtp } from "./harness.internal";
+import { generateOtp, numberToBytes } from "./harness.internal";
 
 interface HotpOptions {
 	addChecksum?: boolean;
@@ -23,8 +23,7 @@ function generateHotp(secret: OtpSecret, counter: number, options?: HotpOptions)
 function generateHotp(secret: OtpSecret, counter: number, options?: HotpOptions): string {
 	const secretEncoding = options?.secretEncoding ?? "base32";
 
-	const movingFactorBuffer = Buffer.alloc(8);
-	movingFactorBuffer.writeBigInt64BE(BigInt(counter), 0);
+	const movingFactorBuffer = numberToBytes(counter);
 
 	let secretBuffer: Buffer;
 

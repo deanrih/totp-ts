@@ -92,6 +92,17 @@ function getHash(algorithm: OtpHashAlgorithm, key: Buffer, input: Buffer): Buffe
 	return result;
 }
 
+function numberToBytes(value: number): Buffer {
+	let temp = value;
+	const buffer = Buffer.alloc(8);
+	for (let idx = buffer.length - 1; idx >= 0; idx -= 1) {
+		buffer[idx] = temp & 0xff;
+		temp >>>= 8;
+	}
+
+	return buffer;
+}
+
 function generateOtp(secret: Buffer, movingFactor: Buffer, options?: OtpGenerationOptions): string {
 	const addChecksum = options?.addChecksum ?? false;
 	const algorithm = options?.algorithm ?? "sha1";
@@ -127,4 +138,4 @@ function generateOtp(secret: Buffer, movingFactor: Buffer, options?: OtpGenerati
 }
 
 export type { OtpDigitLength, OtpHashAlgorithm, OtpSecret, OtpSecretStringEncoding, OtpType };
-export { generateOtp, otpDigitLength, unreasonableDigitError };
+export { generateOtp, numberToBytes, otpDigitLength, unreasonableDigitError };
