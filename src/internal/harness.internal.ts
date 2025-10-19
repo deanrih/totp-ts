@@ -2,6 +2,7 @@ import type { CryptoHasher, SupportedCryptoAlgorithms } from "bun";
 import type { Hmac } from "node:crypto";
 import { createHmac } from "node:crypto";
 
+const unreasonableDigitError: Error = Error("Unreasonable Digit Length");
 const otpDigitLength = [6, 8, 10] as const;
 
 type OtpSecret = string | Buffer;
@@ -130,4 +131,4 @@ function generateOtp(secret: Buffer, movingFactor: Buffer, options?: OtpGenerati
 }
 
 export type { OtpDigitLength, OtpHashAlgorithm, OtpSecret, OtpSecretStringEncoding, OtpType };
-export { generateOtp, otpDigitLength };
+export { generateOtp, otpDigitLength, unreasonableDigitError };
