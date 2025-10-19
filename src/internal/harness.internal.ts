@@ -5,6 +5,7 @@ import { createHmac } from "node:crypto";
 const otpDigitLength = [6, 8, 10] as const;
 
 type OtpSecret = string | Buffer;
+type OtpType = "hotp" | "totp";
 type OtpHashAlgorithm = "sha1" | "sha256" | "sha512";
 type OtpSecretStringEncoding = "base32" | BufferEncoding;
 type OtpDigitLength = (typeof otpDigitLength)[number];
@@ -128,5 +129,5 @@ function generateOtp(secret: Buffer, movingFactor: Buffer, options?: OtpGenerati
 	return code.toString().padStart(digits, "0");
 }
 
-export type { OtpDigitLength, OtpHashAlgorithm, OtpSecret, OtpSecretStringEncoding };
+export type { OtpDigitLength, OtpHashAlgorithm, OtpSecret, OtpSecretStringEncoding, OtpType };
 export { generateOtp, otpDigitLength };
