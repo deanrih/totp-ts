@@ -2,10 +2,19 @@ import type { CryptoHasher, SupportedCryptoAlgorithms } from "bun";
 import type { Hmac } from "node:crypto";
 import { createHmac } from "node:crypto";
 
-type OtpHashAlgorithm = "sha1" | "sha256" | "sha512";
-type OtpSecretEncoding = "base32" | "buffer" | BufferEncoding;
+const otpDigitLength = [6, 8, 10] as const;
 
-const unreasonableDigitError = Error("Unreasonable Digit Length");
+type OtpSecret = string | Buffer;
+type OtpHashAlgorithm = "sha1" | "sha256" | "sha512";
+type OtpSecretStringEncoding = "base32" | BufferEncoding;
+type OtpDigitLength = (typeof otpDigitLength)[number];
+
+interface OtpGenerationOptions {
+	algorithm?: OtpHashAlgorithm;
+	digits?: OtpDigitLength;
+	addChecksum?: boolean;
+	truncationOffset?: number;
+}
 
 // References
 // https://datatracker.ietf.org/doc/html/rfc6238
@@ -60,11 +69,7 @@ function isBun(): boolean {
 	return typeof Bun !== "undefined" || (process !== undefined ? process.versions["bun"] !== undefined : false);
 }
 
-function internalHashBun(
-	algorithm: SupportedCryptoAlgorithms,
-	key: Uint8Array,
-	input: Uint8Array,
-): CryptoHasher {
+function internalHashBun(algorithm: SupportedCryptoAlgorithms, key: Uint8Array, input: Uint8Array): CryptoHasher {
 	if (!isBun()) {
 		throw new Error("Bun environment is not detected. This function relies on Bun's functionality to work.");
 	}
@@ -72,19 +77,11 @@ function internalHashBun(
 	return new Bun.CryptoHasher(algorithm, key).update(input);
 }
 
-function internalHashNode(
-	algorithm: string,
-	key: Uint8Array,
-	input: Uint8Array,
-): Hmac {
+function internalHashNode(algorithm: string, key: Uint8Array, input: Uint8Array): Hmac {
 	return createHmac(algorithm, key).update(input);
 }
 
-function getHash(
-	algorithm: OtpHashAlgorithm,
-	key: Buffer,
-	input: Buffer,
-): Buffer {
+function getHash(algorithm: OtpHashAlgorithm, key: Buffer, input: Buffer): Buffer {
 	const keyByteArray = new Uint8Array(key);
 	const inpByteArray = new Uint8Array(input);
 	const hasher = isBun() ? internalHashBun : internalHashNode;
@@ -92,19 +89,11 @@ function getHash(
 	return result;
 }
 
-function generateOtp(
-	secret: Buffer,
-	movingFactor: Buffer,
-	digits: number = 6,
-	algorithm: OtpHashAlgorithm = "sha1",
-	truncationOffset: number = -1,
-	addChecksum: boolean = false,
-): string {
-	if (digits > 12) {
-		throw unreasonableDigitError;
-	}
-
-	digits += addChecksum ? 1 : 0;
+function generateOtp(secret: Buffer, movingFactor: Buffer, options?: OtpGenerationOptions): string {
+	const addChecksum = options?.addChecksum ?? false;
+	const algorithm = options?.algorithm ?? "sha1";
+	const digits = (options?.digits ?? 6) + Number(addChecksum);
+	const truncationOffset = options?.truncationOffset ?? -1;
 
 	const hash = getHash(algorithm, secret, movingFactor);
 
@@ -139,5 +128,5 @@ function generateOtp(
 	return code.toString().padStart(digits, "0");
 }
 
-export type { OtpHashAlgorithm, OtpSecretEncoding };
+export type { OtpDigitLength, OtpHashAlgorithm, OtpSecret, OtpSecretStringEncoding };
 export { generateOtp };
